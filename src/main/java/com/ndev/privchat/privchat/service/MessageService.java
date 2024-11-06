@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,11 +27,6 @@ public class MessageService {
     }
 
     public Message createMessage(String sender, MessageDto messageDto) {
-        Boolean chatExists = this.chatService.checkIfChatExists(sender, messageDto.getReceiver());
-
-        if (!chatExists) {
-            return null;
-        }
 
         Message message = new Message();
 
@@ -43,8 +37,19 @@ public class MessageService {
         return this.messageRepository.save(message);
     }
 
-    public List<Message> getUserReceivedMessages(String receiver) {
-        return this.messageRepository.findMessageByReceiver(receiver);
+    public List<Message> getMessages(String receiver) {
+        List<Message> msgsReceived = this.messageRepository.findMessageByReceiver(receiver);
+        List<Message> msgsSent = this.messageRepository.findMessageBySender(receiver);
+        msgsSent.addAll(msgsReceived);
+        return msgsSent;
+    }
+
+    public List<Message> getMessagesFromUser(String receiver, String sender) {
+        List<Message> list1 = this.messageRepository.findMessageBySenderAndReceiver(receiver, sender);
+        List<Message> list2 = this.messageRepository.findMessageBySenderAndReceiver(sender, receiver);
+        list1.addAll(list2);
+
+        return list1;
     }
 
 

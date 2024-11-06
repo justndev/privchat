@@ -13,4 +13,6 @@ public interface MessageRepository extends CrudRepository<Message, UUID> {
     Optional<Message> findMessageByUuid(UUID uuid);
 
     List<Message> findMessageByReceiver(String nickname);
+    List<Message> findMessageBySender(String nickname);
+    List<Message> findMessageBySenderAndReceiver(String receiver, String sender);
 }

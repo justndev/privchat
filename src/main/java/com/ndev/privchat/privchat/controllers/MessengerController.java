@@ -47,17 +47,9 @@ public class MessengerController {
     @GetMapping("/")
     public ResponseEntity<List<Message>> getUserReceivedMessages(HttpServletRequest rq) {
         String receiver = messageService.extractNicknameFromRequest(rq);
-        List <Message> messages = messageService.getUserReceivedMessages(receiver);
+        List <Message> messages = messageService.getMessages(receiver);
 
         return ResponseEntity.ok(messages);
-    }
-
-    @PostMapping("/")
-    public ResponseEntity sendMessage(HttpServletRequest rq, @RequestBody MessageDto messageDto) {
-        String receiver = messageService.extractNicknameFromRequest(rq);
-        Message message = this.messageService.createMessage(receiver, messageDto);
-
-        return ResponseEntity.ok(message);
     }
 
     // < ---------------------------- C H A T  R E Q U E S T S ---------------------------- >

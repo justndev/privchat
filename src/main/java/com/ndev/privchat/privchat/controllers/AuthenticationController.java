@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@CrossOrigin(origins = "http://localhost:3000") // You can add this for additional safety
 @RequestMapping("/auth")
 @RestController
 public class AuthenticationController {
@@ -31,6 +31,7 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(registeredUser);
     }
+    
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDto loginUserDto) {
