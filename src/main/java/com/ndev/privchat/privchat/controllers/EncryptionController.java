@@ -27,18 +27,21 @@ public class EncryptionController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity createChatRequest(HttpServletRequest rq, @RequestBody EncryptionStartDto encryptionStartDto) {
+    public ResponseEntity createChatRequest(HttpServletRequest rq, @RequestBody EncryptionChatRequest chatRequest) {
         String requesterNickname = messageService.extractNicknameFromRequest(rq);
-        String requestedNickname = encryptionStartDto.getRequestedNickname();
-        String requesterPublicKey = encryptionStartDto.getRequesterPublicKey();
+        String requestedNickname = chatRequest.getRequestedNickname();
+        String requesterPublicKey = chatRequest.getRequesterPublicKey();
 
-        if (Objects.equals(requestedNickname, requesterNickname)) {
+        Boolean isNicknameDuplicated = Objects.equals(requestedNickname, requesterNickname);
+        Boolean areEmptyFields = requestedNickname == null || requesterPublicKey == null;
+
+        if (!isValidEncryptionChatRequestStart(chatRequest) || Objects.equals(chatRequest.getRequestedNickname(), requesterNickname)) {
             return ResponseEntity.badRequest().build();
         }
 
         UUID matchingRequestId = chatRequestsMap.entrySet().stream()
                 .filter(entry -> entry.getValue().getRequesterNickname().equals(requesterNickname))
-                .filter(entry -> entry.getValue().getRequestedNickname().equals(encryptionStartDto.getRequestedNickname()))
+                .filter(entry -> entry.getValue().getRequestedNickname().equals(chatRequest.getRequestedNickname()))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
@@ -50,74 +53,55 @@ public class EncryptionController {
         encryptionChatRequest.setRequestedNickname(requestedNickname);
         encryptionChatRequest.setRequesterNickname(requesterNickname);
         encryptionChatRequest.setRequesterPublicKey(requesterPublicKey);
-        
-        System.out.println(encryptionChatRequest);
-
 
         chatRequestsMap.put(UUID.randomUUID(), encryptionChatRequest);
         return ResponseEntity.ok("");
     }
 
-    @GetMapping("/receive")
-    public ResponseEntity receiveChatRequests(HttpServletRequest rq) {
+    @PostMapping("/process")
+    public ResponseEntity processChatRequests(HttpServletRequest rq, @RequestBody String requestedPublicKey) {
+        System.out.println("Triggered");
+
         String requestedNickname = messageService.extractNicknameFromRequest(rq);
 
-        List<EncryptionChatRequest> matchingRequests = chatRequestsMap.values().stream()
-                .filter(req -> req.getRequestedNickname().equals(requestedNickname))
-                .filter(req -> req.getRequestedPublicKey() == null || req.getRequestedPublicKey().isEmpty())
-                .toList();
-        System.out.println("Sent back requests: " + matchingRequests.size() );
+        if (!isNonEmptyString(requestedPublicKey)) {
+            return ResponseEntity.badRequest().body("Public key is required to accept requests.");
+        }
 
-        return ResponseEntity.ok(matchingRequests);
-    }
-
-    @PostMapping("/accept")
-    public ResponseEntity acceptChatRequest(HttpServletRequest rq, @RequestBody EncryptionAcceptDto encryptionAcceptDto) {
-        String requestedNickname = messageService.extractNicknameFromRequest(rq);
-        String requesterNickname = encryptionAcceptDto.getRequesterNickname();
-        String requestedPublicKey = encryptionAcceptDto.getRequestedPublicKey();
-
-        UUID matchingRequestId = chatRequestsMap.entrySet().stream()
+        List<UUID> pendingRequestIds = chatRequestsMap.entrySet().stream()
                 .filter(entry -> entry.getValue().getRequestedNickname().equals(requestedNickname))
-                .filter(entry -> entry.getValue().getRequesterNickname().equals(requesterNickname))
                 .filter(entry -> entry.getValue().getRequestedPublicKey() == null || entry.getValue().getRequestedPublicKey().isEmpty())
                 .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse(null);
+                .collect(Collectors.toList());
 
-        if (matchingRequestId != null) {
-            EncryptionChatRequest chatRequest = chatRequestsMap.get(matchingRequestId);
-
-            chatRequest.setRequestedPublicKey(requestedPublicKey);
-            chatRequestsMap.put(matchingRequestId, chatRequest);
-
-            return ResponseEntity.ok("Public key updated for chat request with UUID: " + matchingRequestId);
-        } else {
-            return ResponseEntity.notFound().build();
+        if (!pendingRequestIds.isEmpty()) {
+            for (UUID requestId : pendingRequestIds) {
+                EncryptionChatRequest pendingRequest = chatRequestsMap.get(requestId);
+                if (pendingRequest != null) {
+                    System.out.println("Put public key!");
+                    pendingRequest.setRequestedPublicKey(requestedPublicKey);
+                    chatRequestsMap.put(requestId, pendingRequest);
+                }
+            }
         }
-    }
 
-    @GetMapping("/receive-completed")
-    public ResponseEntity completeChatRequests(HttpServletRequest rq) {
-        String requestedNickname = messageService.extractNicknameFromRequest(rq);
-
-        List<EncryptionChatRequest> matchingRequestsForRequested = chatRequestsMap.values().stream()
-                .filter(req -> req.getRequestedNickname().equals(requestedNickname))
+        List<EncryptionChatRequest> matchingRequests = chatRequestsMap.values().stream()
+                .filter(req -> req.getRequestedNickname().equals(requestedNickname) || req.getRequesterNickname().equals(requestedNickname))
                 .filter(req -> req.getRequestedPublicKey() != null && !req.getRequestedPublicKey().isEmpty())
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        List<EncryptionChatRequest> matchingRequestsForRequester = chatRequestsMap.values().stream()
-                .filter(req -> req.getRequesterNickname().equals(requestedNickname))
-                .filter(req -> req.getRequestedPublicKey() != null && !req.getRequestedPublicKey().isEmpty())
-                .toList();
 
-        matchingRequestsForRequested.addAll(matchingRequestsForRequester);
 
-        return ResponseEntity.ok(matchingRequestsForRequested);
+        System.out.println(chatRequestsMap);
+        System.out.println(matchingRequests);
+        
+        return ResponseEntity.ok(matchingRequests);
     }
+
 
     // < ---------------------------- M E S S A G E S ---------------------------- >
 
+    // NOTE: What if receiver is null?
     @GetMapping("/messages")
     public ResponseEntity<List<Message>> getMessages(HttpServletRequest rq) {
         String receiver = messageService.extractNicknameFromRequest(rq);
@@ -126,19 +110,47 @@ public class EncryptionController {
         return ResponseEntity.ok(messages);
     }
 
+    // NOTE: What if receiver is null?
     @GetMapping("/messages-from")
     public ResponseEntity<List<Message>> getMessagesFromUser(HttpServletRequest rq, String nickname) {
         String receiver = messageService.extractNicknameFromRequest(rq);
-        List <Message> messages = messageService.getMessagesFromUser(receiver, nickname);
 
+        if (nickname.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List <Message> messages = messageService.getMessagesFromUser(receiver, nickname);
         return ResponseEntity.ok(messages);
     }
 
     @PostMapping("/messages")
     public ResponseEntity sendMessage(HttpServletRequest rq, @RequestBody MessageDto messageDto) {
         String receiver = messageService.extractNicknameFromRequest(rq);
-        Message message = this.messageService.createMessage(receiver, messageDto);
 
+        boolean areNicknameDuplicated = receiver == messageDto.getReceiver();
+        boolean areEmptyFields = messageDto.getContent().isEmpty() ||
+                messageDto.getReceiver().isEmpty();
+
+        if (areEmptyFields || areNicknameDuplicated) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Message message = this.messageService.createMessage(receiver, messageDto);
         return ResponseEntity.ok(message);
     }
+
+    private boolean isValidEncryptionChatRequestStart(EncryptionChatRequest request) {
+        return isNonEmptyString(request.getRequestedNickname())
+                && isNonEmptyString(request.getRequesterPublicKey());
+    }
+
+    private boolean isValidEncryptionChatRequestAccept(EncryptionChatRequest request) {
+        return isNonEmptyString(request.getRequesterNickname())
+                && isNonEmptyString(request.getRequestedPublicKey());
+    }
+
+    private boolean isNonEmptyString(String str) {
+        return str != null && !str.trim().isEmpty();
+    }
 }
+
