@@ -36,7 +36,7 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/pool/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 
                         .anyRequest().authenticated()
@@ -54,13 +54,10 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow frontend origin
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
 
-        // Allow necessary HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // Allow necessary headers
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",

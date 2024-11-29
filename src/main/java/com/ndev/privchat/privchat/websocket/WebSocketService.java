@@ -16,10 +16,10 @@ public class WebSocketService {
     private SimpMessagingTemplate messagingTemplate;
 
 
-    public <T> void sendSpecific(String userId, String update) throws Exception {
+    public <T> void sendSpecific(String userId, Object message) throws Exception {
         String sessionId = this.userSessionRegistry.getUserSessions().get(userId);
         SocketResponse<T> response = new SocketResponse<>();
-        response.setUpdate(update);
+        response.setMessage(message);
 
         if (sessionId != null) {
             messagingTemplate.convertAndSend("/queue/specific-user-" + sessionId, response);

@@ -1,26 +1,11 @@
 package com.ndev.privchat.privchat.websocket;
 
-import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class SocketResponse<T> {
-    private String update;
-    private List<T> objects;
+    private Object message;
 
-    // Getter and Setter for update
-    public String getUpdate() {
-        return update;
-    }
-
-    public void setUpdate(String update) {
-        this.update = update;
-    }
-
-    // Getter and Setter for objects
-    public List<T> getObjects() {
-        return objects;
-    }
-
-    public void setObjects(List<T> objects) {
-        this.objects = objects;
-    }
 }

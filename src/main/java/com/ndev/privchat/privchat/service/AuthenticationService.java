@@ -1,54 +1,64 @@
 package com.ndev.privchat.privchat.service;
 
-import com.ndev.privchat.privchat.dtos.LoginUserDto;
-import com.ndev.privchat.privchat.dtos.RegisterUserDto;
-import com.ndev.privchat.privchat.entities.User;
-import com.ndev.privchat.privchat.repositories.UserRepository;
+import com.ndev.privchat.privchat.service.nickname.NicknameService;
+import com.ndev.privchat.privchat.swarmPool.SwampUser;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthenticationService {
-    private final UserRepository userRepository;
+    // SWAMP PROJECT
+    private final Map<String, SwampUser> swampPool = new ConcurrentHashMap<>();
+
+    private final UserService userService;
 
     private final PasswordEncoder passwordEncoder;
 
     private AuthenticationManager authenticationManager;
 
+    private final NicknameService nicknameService;
+
     public AuthenticationService(
-            UserRepository userRepository,
             AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            NicknameService nicknameService,
+            UserService userService
     )
     {
         this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.nicknameService = nicknameService;
+        this.userService = userService;
     }
 
-    public User signup(RegisterUserDto input) {
-        User user = new User(
-                UUID.randomUUID(),
-                input.getNickname(),
-                passwordEncoder.encode(input.getPassword()),
-                null
-        );
+    // SWAMP PROJECT
+    public SwampUser analogAuthenticate() throws IOException {
+        String randomNickname = nicknameService.generateNickname();
 
-        return userRepository.save(user);
-    }
+        boolean isNicknameTaken = userService.userExists(randomNickname);
+        if (isNicknameTaken) {
+            return null;
+        }
+        SwampUser swampUser = SwampUser.builder()
+                .nickname(randomNickname)
+                .createdAt(new Date(System.currentTimeMillis()))
+                .build();
+        userService.addUser(swampUser);
 
-    public User authenticate(LoginUserDto input) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        input.getNickname(),
-                        input.getPassword()
+                        randomNickname,
+                        randomNickname
                 )
         );
-        return userRepository.findByNickname(input.getNickname())
-                .orElseThrow();
+        return swampUser;
     }
 }

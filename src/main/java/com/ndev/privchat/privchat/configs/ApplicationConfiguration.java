@@ -1,6 +1,7 @@
 package com.ndev.privchat.privchat.configs;
 
-import com.ndev.privchat.privchat.repositories.UserRepository;
+import com.ndev.privchat.privchat.service.UserService;
+import com.ndev.privchat.privchat.swarmPool.SwampUser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,27 +14,38 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @EnableMethodSecurity
 public class ApplicationConfiguration {
+    private final UserService userService;
 
-    private final UserRepository userRepository;
-
-    public ApplicationConfiguration(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public ApplicationConfiguration(UserService userService) {
+        this.userService = userService;
     }
 
+    // Changed
     @Bean
     UserDetailsService userDetailsService() {
-        return username -> userRepository.findByNickname(username)
-                .orElseThrow(()-> new UsernameNotFoundException(("User not found")));
+        return username -> {
+            SwampUser user = userService.findUserByNickname(username);
+                    if (user == null) {
+                        throw new UsernameNotFoundException(("User not found"));
+                    }
+                    return user;
+        };
     }
 
     @Bean
-    BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
     @Bean
