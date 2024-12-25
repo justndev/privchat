@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://privchat.s3-website.eu-north-1.amazonaws.com")
 @RequestMapping("/pool")
 @Controller
 public class AuthenticationController {

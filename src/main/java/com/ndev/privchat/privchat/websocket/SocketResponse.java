@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SocketResponse<T> {
-    private Object message;
-
+    private String type;
+    private Object data;
 }

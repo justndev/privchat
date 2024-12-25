@@ -41,13 +41,15 @@ public class EncryptionController {
         }
         messageDto.setSender(sender);
 
-        webSocketService.sendSpecific(messageDto.getReceiver(), messageDto);
+        webSocketService.sendSpecific(messageDto.getReceiver(), messageDto, "message");
+        webSocketService.sendSpecific(sender, messageDto, "message");
+
 
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/create")
-    public ResponseEntity createChatRequest(HttpServletRequest rq, @RequestBody EncryptionChatRequest chatRequest) {
+    public ResponseEntity createChatRequest(HttpServletRequest rq, @RequestBody EncryptionChatRequest chatRequest) throws Exception {
         String requesterNickname = messageService.extractNicknameFromRequest(rq);
         String requestedNickname = chatRequest.getRequestedNickname();
         String requesterPublicKey = chatRequest.getRequesterPublicKey();
@@ -70,16 +72,14 @@ public class EncryptionController {
         encryptionChatRequest.setRequestedNickname(requestedNickname);
         encryptionChatRequest.setRequesterNickname(requesterNickname);
         encryptionChatRequest.setRequesterPublicKey(requesterPublicKey);
-
+        webSocketService.sendSpecific(requestedNickname, "request", "request");
         chatRequestsMap.put(UUID.randomUUID(), encryptionChatRequest);
         return ResponseEntity.ok("");
     }
 
     @PostMapping("/process")
-    public ResponseEntity processChatRequests(HttpServletRequest rq, @RequestBody String requestedPublicKey) {
+    public ResponseEntity processChatRequests(HttpServletRequest rq, @RequestBody String requestedPublicKey) throws Exception {
         String requestedNickname = messageService.extractNicknameFromRequest(rq);
-
-        System.out.println(requestedPublicKey + " " + requestedNickname);
 
         if (!isNonEmptyString(requestedPublicKey)) {
             return ResponseEntity.badRequest().body("Public key is required to accept requests.");
@@ -95,9 +95,9 @@ public class EncryptionController {
             for (UUID requestId : pendingRequestIds) {
                 EncryptionChatRequest pendingRequest = chatRequestsMap.get(requestId);
                 if (pendingRequest != null) {
-                    System.out.println("Put public key!");
                     pendingRequest.setRequestedPublicKey(requestedPublicKey);
                     chatRequestsMap.put(requestId, pendingRequest);
+                    webSocketService.sendSpecific(pendingRequest.getRequesterNickname(), "request", "request");
                 }
             }
         }

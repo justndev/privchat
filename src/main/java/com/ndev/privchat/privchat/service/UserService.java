@@ -15,7 +15,7 @@ public class UserService {
     public UserService() {}
 
     public void addUser(SwampUser swampUser) {
-        pool.put(swampUser.getNickname() , swampUser);
+        pool.put(swampUser.getNickname(), swampUser);
     }
 
     public List<SwampUser> allUsers() {
