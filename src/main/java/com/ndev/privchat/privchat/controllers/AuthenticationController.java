@@ -40,7 +40,7 @@ public class AuthenticationController {
             LoginResponse loginResponse = new LoginResponse()
                     .setNickname(authenticatedUser.getNickname())
                     .setToken(jwtToken)
-                    .setExpiresIn(jwtService.getExpirationTime());
+                    .setExpiresIn(System.currentTimeMillis()+ jwtService.getExpirationTime());
 
             return ResponseEntity.ok(loginResponse);
         } catch (Exception e) {

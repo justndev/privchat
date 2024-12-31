@@ -32,7 +32,7 @@ public class EncryptionController {
     public ResponseEntity sendMessage(HttpServletRequest rq, @RequestBody MessageDto messageDto) throws Exception {
         String sender = messageService.extractNicknameFromRequest(rq);
 
-        boolean areNicknameDuplicated = sender == messageDto.getReceiver();
+        boolean areNicknameDuplicated = Objects.equals(sender, messageDto.getReceiver());
         boolean areEmptyFields = messageDto.getContent().isEmpty() ||
                 messageDto.getReceiver().isEmpty();
 
@@ -43,7 +43,6 @@ public class EncryptionController {
 
         webSocketService.sendSpecific(messageDto.getReceiver(), messageDto, "message");
         webSocketService.sendSpecific(sender, messageDto, "message");
-
 
         return ResponseEntity.ok().build();
     }

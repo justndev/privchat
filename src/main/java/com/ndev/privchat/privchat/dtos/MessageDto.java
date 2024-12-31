@@ -3,6 +3,8 @@ package com.ndev.privchat.privchat.dtos;
 import jakarta.annotation.Nullable;
 import lombok.*;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @Builder
@@ -13,4 +15,8 @@ public class MessageDto {
     private String receiver;
     @Nullable
     private String sender;
+    @Nullable
+    private Date createdAt;
+    @Nullable
+    private String id;
 }
