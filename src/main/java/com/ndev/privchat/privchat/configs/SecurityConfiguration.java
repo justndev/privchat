@@ -38,6 +38,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/pool/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/admin/**").permitAll()
+
 
                         .anyRequest().authenticated()
                 )

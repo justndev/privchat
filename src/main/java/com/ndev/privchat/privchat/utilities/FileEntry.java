@@ -10,12 +10,17 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class MediaEntry {
+public class FileEntry {
+
+    private final String filename;
     private final String originalFilename;
+    private final long acceptedAt;
+    private final String size;
     private final String receiver;
     private final String sender;
-    private final String id;
     private final String fileType;
     @Nullable
     private final String expiresAt;
+    @Nullable
+    private final String id;
 }

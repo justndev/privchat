@@ -16,8 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class AuthenticationService {
     // SWAMP PROJECT
-    private final Map<String, SwampUser> swampPool = new ConcurrentHashMap<>();
-
     private final UserService userService;
 
     private final PasswordEncoder passwordEncoder;

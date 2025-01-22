@@ -8,13 +8,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class WebSocketService {
 
-
     @Autowired
     private UserSessionRegistry userSessionRegistry;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
-
 
     public <T> void sendSpecific(String userId, Object data, String type) throws Exception {
         String sessionId = this.userSessionRegistry.getUserSessions().get(userId);

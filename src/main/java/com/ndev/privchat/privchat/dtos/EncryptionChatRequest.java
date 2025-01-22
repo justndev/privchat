@@ -9,13 +9,10 @@ import lombok.ToString;
 @Getter
 @ToString
 public class EncryptionChatRequest {
-    @Nullable
     private String requesterNickname;
-    @Nullable
     private String requestedNickname;
     @Nullable
     private String requestedPublicKey;
-    @Nullable
     private String requesterPublicKey;
 }
 

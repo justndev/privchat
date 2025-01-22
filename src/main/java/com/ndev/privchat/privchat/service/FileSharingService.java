@@ -1,5 +1,6 @@
 package com.ndev.privchat.privchat.service;
 
+import com.ndev.privchat.privchat.utilities.FileEntry;
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,10 +17,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -39,13 +37,23 @@ public class FileSharingService {
         }
     }
 
-    public FileEntry storeFile(MultipartFile file, String receiver, String sender, String fileType) throws IOException {
+    public FileEntry storeFile(MultipartFile file, String receiver, String sender, String fileType, Optional<String> id, Optional<String> expiresAt) throws IOException {
         String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
 
         Path filePath = Paths.get(TEMP_DIR, filename);
         Files.write(filePath, file.getBytes());
 
-        FileEntry entry = new FileEntry(filename, file.getOriginalFilename(), System.currentTimeMillis(), getReadableFileSize(file.getSize()), receiver, sender, fileType);
+        FileEntry entry = new FileEntry(
+                filename,
+                file.getOriginalFilename(),
+                System.currentTimeMillis(),
+                getReadableFileSize(file.getSize()),
+                receiver,
+                sender,
+                fileType,
+                expiresAt.orElse(null),
+                id.orElse(null)
+                );
         fileMetadata.put(filename, entry);
 
         System.out.println("File stored in temp folder: " + filePath);
@@ -128,18 +136,5 @@ public class FileSharingService {
             System.err.println("Error deleting file: " + filePath + " - " + e.getMessage());
         }
     }
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @Builder
-    public static class FileEntry {
 
-        private final String filename;
-        private final String originalFilename;
-        private final long acceptedAt;
-        private final String size;
-        private final String receiver;
-        private final String sender;
-        private final String fileType;
-    }
 }

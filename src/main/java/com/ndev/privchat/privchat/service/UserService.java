@@ -37,4 +37,8 @@ public class UserService {
     public Map<String, SwampUser> getUserMap() {
         return pool;
     }
+
+    public int countUsers() {
+        return pool.size();
+    }
 }

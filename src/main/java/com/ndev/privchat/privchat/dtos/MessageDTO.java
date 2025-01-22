@@ -10,13 +10,12 @@ import java.util.Date;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class MessageDto {
+public class MessageDTO {
     private String content;
     private String receiver;
-    @Nullable
     private String sender;
-    @Nullable
-    private Date createdAt;
-    @Nullable
+    private String createdAt;
     private String id;
+    private String type;
+    private String expiresAt;
 }
