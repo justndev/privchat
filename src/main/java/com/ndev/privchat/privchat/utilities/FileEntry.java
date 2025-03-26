@@ -23,4 +23,8 @@ public class FileEntry {
     private final String expiresAt;
     @Nullable
     private final String id;
+    @Nullable
+    private String type;
+    @Nullable
+    private String chatId;
 }

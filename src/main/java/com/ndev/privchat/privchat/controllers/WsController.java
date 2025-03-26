@@ -8,9 +8,16 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.security.Principal;
 
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://16.171.154.134",
+        "http://priv-chat.com"
+})
 @Controller
 public class WsController {
 

@@ -14,6 +14,9 @@ public class EncryptionChatRequest {
     @Nullable
     private String requestedPublicKey;
     private String requesterPublicKey;
+    @Nullable
+    private String chatId;
+    private String type;
 }
 
 

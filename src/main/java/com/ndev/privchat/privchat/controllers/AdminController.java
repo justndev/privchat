@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import java.util.Objects;
 
-@CrossOrigin(origins = "http://privchat.s3-website.eu-north-1.amazonaws.com")
 @RequestMapping("/admin")
 @Controller
 public class AdminController {

@@ -15,4 +15,6 @@ public class MediaUploadDTO {
     private String id;
     private String expiresAt;
     private String fileType;
+    private String type;
+    private String chatId;
 }

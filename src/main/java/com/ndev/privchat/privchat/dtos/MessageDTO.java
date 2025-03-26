@@ -18,4 +18,5 @@ public class MessageDTO {
     private String id;
     private String type;
     private String expiresAt;
+    private String chatId;
 }

@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://privchat.s3-website.eu-north-1.amazonaws.com")
 @RequestMapping("/pool")
 @Controller
 public class AuthenticationController {
@@ -63,6 +62,16 @@ public class AuthenticationController {
                     .setExpiresIn(System.currentTimeMillis()+ jwtService.getExpirationTime());
 
             return ResponseEntity.ok(loginResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/check-token")
+    public ResponseEntity<Boolean> useToken(HttpServletRequest rq, @RequestParam String token) throws IOException {
+        try {
+            return ResponseEntity.ok(sqliteService.tokenExists(token));
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

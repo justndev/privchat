@@ -1,5 +1,6 @@
 package com.ndev.privchat.privchat.controllers;
 
+import com.ndev.privchat.privchat.data.RuntimeDataStore;
 import com.ndev.privchat.privchat.dtos.ConfirmDestinationDto;
 import com.ndev.privchat.privchat.dtos.MessageDTO;
 import com.ndev.privchat.privchat.service.LoggingService;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Objects;
+
 @Controller
 @RequestMapping("/chat")
 public class MessageController {
@@ -24,25 +27,34 @@ public class MessageController {
     private final SQLiteService sqliteService;
     private final MessageService messageService;
     private final UtilityFunctions utilityFunctions;
+    private final RuntimeDataStore runtimeDataStore;
 
-    public MessageController(WebSocketService webSocketService, SQLiteService sqliteService, MessageService messageService, LoggingService loggingService, UtilityFunctions utilityFunctions) {
+
+
+    public MessageController(WebSocketService webSocketService, SQLiteService sqliteService, MessageService messageService, LoggingService loggingService, UtilityFunctions utilityFunctions, RuntimeDataStore runtimeDataStore) {
         this.webSocketService = webSocketService;
         this.sqliteService = sqliteService;
         this.messageService = messageService;
         this.loggingService = loggingService;
         this.utilityFunctions = utilityFunctions;
+        this.runtimeDataStore = runtimeDataStore;
     }
 
     @PostMapping("/messages")
     public ResponseEntity sendMessage(HttpServletRequest rq, @RequestBody MessageDTO messageDto) throws Exception {
         String sender = messageService.extractNicknameFromRequest(rq);
-
-        boolean isRequestFine = utilityFunctions.isMessageDtoValid(sender, messageDto);
-        if (!isRequestFine) {
-            return ResponseEntity.badRequest().build();
-        }
+        String ipAddress = rq.getRemoteAddr();
+        if (!runtimeDataStore.processMessageLimit(ipAddress)) {
+            return ResponseEntity.badRequest().body("Limit");
+        };
+//        boolean isRequestFine = utilityFunctions.isMessageDtoValid(sender, messageDto);
+//        if (!isRequestFine) {
+//            return ResponseEntity.badRequest().build();
+//        }
         messageDto.setSender(sender);
+        if (Objects.equals(messageDto.getType(), "delete-chat")) {
 
+        }
 //      ### Must be in service
         loggingService.log("Message | S: " + sender + "R: " + messageDto.getReceiver() + "T: " + messageDto.getType());
         sqliteService.addMessageTime(String.valueOf(System.currentTimeMillis()));
@@ -54,12 +66,14 @@ public class MessageController {
 
     @PostMapping("/confirm-reached")
     public ResponseEntity confirmReached(HttpSession  rq, @RequestBody ConfirmDestinationDto dto) throws Exception {
-        webSocketService.sendSpecific(dto.getReceiver(), dto.getMessageId(), "reached");
+        dto.setType("reached");
+        webSocketService.sendSpecific(dto.getReceiver(), dto, "reached");
         return ResponseEntity.ok().build();
     }
     @PostMapping("/confirm-watched")
     public ResponseEntity confirmWatched(HttpSession  rq,  @RequestBody ConfirmDestinationDto dto) throws Exception {
-        webSocketService.sendSpecific(dto.getReceiver(), dto.getMessageId(), "watched");
+        dto.setType("watched");
+        webSocketService.sendSpecific(dto.getReceiver(), dto, "watched");
         return ResponseEntity.ok().build();
     }
 }

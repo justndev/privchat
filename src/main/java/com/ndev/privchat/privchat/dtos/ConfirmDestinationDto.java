@@ -1,5 +1,6 @@
 package com.ndev.privchat.privchat.dtos;
 
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,4 +9,8 @@ import lombok.Setter;
 public class ConfirmDestinationDto {
     private String messageId;
     private String receiver;
+    @Nullable
+    private String chatId;
+    @Nullable
+    private String type;
 }

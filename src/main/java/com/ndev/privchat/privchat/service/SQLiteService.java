@@ -7,19 +7,23 @@ import org.springframework.stereotype.Service;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class SQLiteService {
 
-    private static final String DATABASE_URL = "jdbc:sqlite:service.db";
+    private static final String DATABASE_LOGS_URL = "jdbc:sqlite:logs.db";
+    private static final String DATABASE_TOKEN_URL = "jdbc:sqlite:tokens.db";
+
 
     public SQLiteService() {
-        createDatabaseAndTables();
+        createDatabaseAndTablesForLogs();
+        createDatabaseAndTablesForTokens();
     }
 
     // Create database and tables if they don't exist
-    private void createDatabaseAndTables() {
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+    private void createDatabaseAndTablesForLogs() {
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              Statement stmt = conn.createStatement()) {
 
             // Create messages table
@@ -54,12 +58,76 @@ public class SQLiteService {
         }
     }
 
+    private void createDatabaseAndTablesForTokens() {
+        try (Connection conn = DriverManager.getConnection(DATABASE_TOKEN_URL);
+             Statement stmt = conn.createStatement()) {
+
+            String createTokenTable = "CREATE TABLE IF NOT EXISTS tokens (\n"
+                    + "    token TEXT PRIMARY KEY\n"
+                    + ");";
+            stmt.execute(createTokenTable);
+
+        } catch (SQLException e) {
+            System.err.println("Error creating database or tables: " + e.getMessage());
+        }
+    }
+
+    public String addToken() {
+        String insertToken = "INSERT INTO tokens (token) VALUES (?);";
+        String token = UUID.randomUUID().toString();
+
+        try (Connection conn = DriverManager.getConnection(DATABASE_TOKEN_URL);
+             PreparedStatement pstmt = conn.prepareStatement(insertToken)) {
+
+            pstmt.setString(1, token);
+            pstmt.executeUpdate();
+            return token;
+
+        } catch (SQLException e) {
+            System.err.println("Error adding token: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public boolean tokenExists(String token) {
+        String checkToken = "SELECT 1 FROM tokens WHERE token = ? LIMIT 1;";
+
+        try (Connection conn = DriverManager.getConnection(DATABASE_TOKEN_URL);
+             PreparedStatement pstmt = conn.prepareStatement(checkToken)) {
+
+            pstmt.setString(1, token);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();  // Returns true if token exists
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error checking token: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean removeToken(String token) {
+        String deleteToken = "DELETE FROM tokens WHERE token = ?;";
+
+        try (Connection conn = DriverManager.getConnection(DATABASE_TOKEN_URL);
+             PreparedStatement pstmt = conn.prepareStatement(deleteToken)) {
+
+            pstmt.setString(1, token);
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;  // Returns true if a token was removed
+
+        } catch (SQLException e) {
+            System.err.println("Error removing token: " + e.getMessage());
+            return false;
+        }
+    }
+
     // Insert a new time value into the messages table
     public void addMessageTime(String time) {
         String insertMessage = "INSERT INTO messages (time) VALUES (?);";
         String updateMessagesCount = "UPDATE records SET all_sent_messages = all_sent_messages + 1;";
 
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              PreparedStatement pstmt = conn.prepareStatement(insertMessage);
              Statement stmt = conn.createStatement()) {
 
@@ -77,7 +145,7 @@ public class SQLiteService {
         String insertRegistration = "INSERT INTO registrations (time) VALUES (?);";
         String updateRegistrationsCount = "UPDATE records SET all_registrations = all_registrations + 1;";
 
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              PreparedStatement pstmt = conn.prepareStatement(insertRegistration);
              Statement stmt = conn.createStatement()) {
 
@@ -95,7 +163,7 @@ public class SQLiteService {
         String selectMessages = "SELECT * FROM messages;";
         List<MessageRecord> messages = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectMessages)) {
 
@@ -115,7 +183,7 @@ public class SQLiteService {
         String selectRegistrations = "SELECT * FROM registrations;";
         List<RegistrationRecord> registrations = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectRegistrations)) {
 
@@ -135,7 +203,7 @@ public class SQLiteService {
         String selectMessages = "SELECT * FROM messages;";
         String selectRegistrations = "SELECT * FROM registrations;";
 
-        try (Connection conn = DriverManager.getConnection(DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_LOGS_URL);
              Statement stmt = conn.createStatement()) {
 
             System.out.println("Messages:");

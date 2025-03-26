@@ -13,4 +13,6 @@ public class FileUploadDTO {
     private String fileType;
     private String id;
     private String expiresAt;
+    private String type;
+    private String chatId;
 }

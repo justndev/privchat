@@ -52,7 +52,9 @@ public class FileSharingService {
                 sender,
                 fileType,
                 expiresAt.orElse(null),
-                id.orElse(null)
+                id.orElse(null),
+                null,
+                null
                 );
         fileMetadata.put(filename, entry);
 

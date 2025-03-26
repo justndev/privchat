@@ -56,7 +56,12 @@ public class SecurityConfiguration {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://privchat.s3-website.eu-north-1.amazonaws.com"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000",
+                "http://localhost:8080",
+                "http://16.171.154.134",
+                "http://priv-chat.com",
+                "http://www.priv-chat.com",
+                "https://www.priv-chat.com"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 

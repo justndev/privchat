@@ -1,5 +1,6 @@
 package com.ndev.privchat.privchat.controllers;
 
+import com.ndev.privchat.privchat.data.RuntimeDataStore;
 import com.ndev.privchat.privchat.service.FileSharingService;
 import com.ndev.privchat.privchat.service.LoggingService;
 import com.ndev.privchat.privchat.service.MessageService;
@@ -26,16 +27,19 @@ public class FileSharingController {
 
     private final WebSocketService webSocketService;
 
+    private final RuntimeDataStore runtimeDataStore;
+
     private  final LoggingService loggingService;
 
     private final SQLiteService sqliteService;
 
     private final UtilityFunctions utilityFunctions;
 
-    public FileSharingController(FileSharingService fileSharingService, MessageService messageService, WebSocketService webSocketService, LoggingService loggingService, SQLiteService sqliteService, UtilityFunctions utilityFunctions) {
+    public FileSharingController(FileSharingService fileSharingService, MessageService messageService, WebSocketService webSocketService, RuntimeDataStore runtimeDataStore, LoggingService loggingService, SQLiteService sqliteService, UtilityFunctions utilityFunctions) {
         this.fileSharingService = fileSharingService;
         this.messageService = messageService;
         this.webSocketService = webSocketService;
+        this.runtimeDataStore = runtimeDataStore;
         this.loggingService = loggingService;
         this.sqliteService = sqliteService;
         this.utilityFunctions = utilityFunctions;
@@ -47,9 +51,15 @@ public class FileSharingController {
                                      @RequestParam("receiver") String receiver,
                                      @RequestParam("fileType") String fileType,
                                      @RequestParam("id") String id,
+                                     @RequestParam("chatId") String chatId,
                                      @RequestParam("expiresAt") String expiresAt
                                     ) {
         String sender = messageService.extractNicknameFromRequest(rq);
+
+        String ipAddress = rq.getRemoteAddr();
+        if (!runtimeDataStore.processFileLimit(ipAddress)) {
+            return ResponseEntity.badRequest().body("Limit");
+        };
 
         boolean isDtoCorrect = utilityFunctions.isFileUploadInputValid(file, sender, receiver, fileType, id, expiresAt);
         if (!isDtoCorrect) {
@@ -60,6 +70,8 @@ public class FileSharingController {
         sqliteService.addMessageTime(String.valueOf(System.currentTimeMillis()));
         try {
             FileEntry entry = fileSharingService.storeFile(file, receiver, sender, fileType, Optional.ofNullable(id), Optional.ofNullable(expiresAt));
+            entry.setType("file");
+            entry.setChatId(chatId);
             webSocketService.sendSpecific(receiver, entry, "file");
             webSocketService.sendSpecific(sender, entry, "file");
             return ResponseEntity.status(200).build();
@@ -77,6 +89,7 @@ public class FileSharingController {
 
         boolean isFilenameCorrect = utilityFunctions.isParamValid(filename);
         if (!isFilenameCorrect) {
+            System.out.println("File has wrong name");
             return ResponseEntity.badRequest().build();
         }
         loggingService.log("Got File | S: " + sender + "F: " + filename);
@@ -98,9 +111,15 @@ public class FileSharingController {
                                       @RequestParam("file") MultipartFile file,
                                       @RequestParam("receiver") String receiver,
                                       @RequestParam("id") String id,
+                                      @RequestParam("chatId") String chatId,
                                       @RequestParam("expiresAt") String expiresAt,
                                       @RequestParam("fileType") String fileType
                                       ) {
+        String ipAddress = rq.getRemoteAddr();
+        if (!runtimeDataStore.processMediaLimit(ipAddress)) {
+            return ResponseEntity.badRequest().body("Limit");
+        };
+
         String sender = messageService.extractNicknameFromRequest(rq);
         loggingService.log("Put Media | S: " + sender + "R: " + receiver + "F:" + file.getOriginalFilename() + "T: " + fileType );
         sqliteService.addMessageTime(String.valueOf(System.currentTimeMillis()));
@@ -113,6 +132,8 @@ public class FileSharingController {
         try {
 
             FileEntry entry = fileSharingService.storeFile(file, receiver, sender, fileType, Optional.ofNullable(id), Optional.ofNullable(expiresAt));
+            entry.setType("media");
+            entry.setChatId(chatId);
             webSocketService.sendSpecific(receiver, entry, "media");
             webSocketService.sendSpecific(sender, entry, "media");
             return ResponseEntity.status(200).build();
