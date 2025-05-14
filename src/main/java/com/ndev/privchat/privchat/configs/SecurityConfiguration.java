@@ -39,6 +39,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/pool/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/admin/**").permitAll()
+                        .requestMatchers("/payment/**").permitAll()
+
 
 
                         .anyRequest().authenticated()

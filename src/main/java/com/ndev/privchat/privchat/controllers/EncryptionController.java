@@ -44,9 +44,9 @@ public class EncryptionController {
     @PostMapping("/create")
     public ResponseEntity createChatRequest(HttpServletRequest rq, @RequestBody EncryptionChatRequest chatRequest) throws Exception {
         String ipAddress = rq.getRemoteAddr();
-        if (!runtimeDataStore.processChatLimit(ipAddress)) {
-            return ResponseEntity.badRequest().body("Limit");
-        };
+//        if (!runtimeDataStore.processChatLimit(ipAddress)) {
+//            return ResponseEntity.badRequest().body("Limit");
+//        };
 
         String requesterNickname = messageService.extractNicknameFromRequest(rq);
         String requestedNickname = chatRequest.getRequestedNickname();

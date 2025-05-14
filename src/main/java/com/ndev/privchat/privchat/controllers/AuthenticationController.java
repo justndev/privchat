@@ -2,10 +2,7 @@ package com.ndev.privchat.privchat.controllers;
 
 import com.ndev.privchat.privchat.dtos.UserDataDto;
 import com.ndev.privchat.privchat.responses.LoginResponse;
-import com.ndev.privchat.privchat.service.AuthenticationService;
-import com.ndev.privchat.privchat.service.JwtService;
-import com.ndev.privchat.privchat.service.LoggingService;
-import com.ndev.privchat.privchat.service.SQLiteService;
+import com.ndev.privchat.privchat.service.*;
 import com.ndev.privchat.privchat.swarmPool.SwampUser;
 import com.ndev.privchat.privchat.utilities.UtilityFunctions;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,17 +23,19 @@ public class AuthenticationController {
     private final LoggingService loggingService;
     private final SQLiteService sqliteService;
     private final UtilityFunctions utilityFunctions;
+    private final PaymentService paymentService;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, LoggingService loggingService, SQLiteService sqliteService, UtilityFunctions utilityFunctions) {
+    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, LoggingService loggingService, SQLiteService sqliteService, UtilityFunctions utilityFunctions, PaymentService paymentService) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
         this.loggingService = loggingService;
         this.sqliteService = sqliteService;
         this.utilityFunctions = utilityFunctions;
+        this.paymentService = paymentService;
     }
 
     @PostMapping("/enter")
-    public ResponseEntity<LoginResponse> authenticateToPool(HttpServletRequest rq, @RequestBody UserDataDto dto) throws IOException {
+    public ResponseEntity<LoginResponse> authenticateToPool(HttpServletRequest rq, @RequestParam(required = false) String paymentId, @RequestBody UserDataDto dto) throws IOException {
         String ipAddress = rq.getRemoteAddr();
         String userData = dto.toString();
 
@@ -47,6 +46,10 @@ public class AuthenticationController {
 
         loggingService.log("Entered | IP: " + ipAddress + "User: " + userData);
         sqliteService.addRegistrationTime(String.valueOf(System.currentTimeMillis()));
+        boolean hasSubscription = false;
+        if (paymentId != null && !paymentId.isEmpty()) {
+            hasSubscription = paymentService.checkPaymentById(paymentId);
+        }
         try {
             SwampUser authenticatedUser = authenticationService.analogAuthenticate();
             if (authenticatedUser == null) {
